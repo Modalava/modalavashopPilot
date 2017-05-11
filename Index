@@ -1,0 +1,78 @@
+<?php
+
+	// 設定項目
+	$access_token = '' ;	// アクセストークン
+	$request_url = 'https://api.instagram.com/v1/tags/' . rawurlencode( '八景島シーパラダイス' ) . '?access_token=' . $access_token ;		// リクエストURL
+
+	// アイテムデータをJSON形式で取得する (CURLを使用)
+	$curl = curl_init() ;
+
+	// オプションのセット
+	curl_setopt( $curl , CURLOPT_URL , $request_url ) ;
+	curl_setopt( $curl , CURLOPT_HEADER, 1 ) ; 
+	curl_setopt( $curl , CURLOPT_SSL_VERIFYPEER , false ) ;								// 証明書の検証を行わない
+	curl_setopt( $curl , CURLOPT_RETURNTRANSFER , true ) ;								// curl_execの結果を文字列で返す
+	curl_setopt( $curl , CURLOPT_TIMEOUT , 5 ) ;										// タイムアウトの秒数
+
+	// 実行
+	$res1 = curl_exec( $curl ) ;
+	$res2 = curl_getinfo( $curl ) ;
+
+	// 終了
+	curl_close( $curl ) ;
+
+	// 取得したデータ
+	$json = substr( $res1, $res2['header_size'] ) ;										// 取得したデータ(JSONなど)
+	$header = substr( $res1, 0, $res2['header_size'] ) ;								// レスポンスヘッダー (検証に利用したい場合にどうぞ)
+
+	// HTML用
+	$html = '' ;
+
+	// JSONデータをオブジェクト形式に変換する
+	$obj = json_decode( $json ) ;
+
+	// HTMLを作成
+	$html .= '<h2>実行結果</h2>' ;
+
+	// エラー判定
+	if( !$obj || !isset($obj->data) )
+	{
+		$html .= '<p>データを取得できませんでした…。設定を再確認して下さい。</p>' ;
+	}
+	else
+	{
+		// エイリアス
+		$item = $obj->data ;
+
+			// 各データの整理
+			$media_count = $item->media_count ;		// 投稿数
+			$name = $item->name ;		// ハッシュタグ名
+
+			// ブラウザに出力
+			$html .= '<dl>' ;
+			$html .= 	'<dt>ハッシュタグ名</dt>' ;
+			$html .= 		'<dd>' . $name . '</dd>' ;
+			$html .= 	'<dt>投稿数</dt>' ;
+			$html .= 		'<dd>' . $media_count . '</dd>' ;
+			$html .= '</dl>' ;
+	}
+
+	// 取得したデータ
+	$html .= '<h2>取得したデータ</h2>' ;
+	$html .= '<p>下記のデータを取得できました。</p>' ;
+	$html .= 	'<h3>JSON</h3>' ;
+	$html .= 	'<p><textarea rows="8">' . $json . '</textarea></p>' ;
+	$html .= 	'<h3>レスポンスヘッダー</h3>' ;
+	$html .= 	'<p><textarea rows="8">' . $header . '</textarea></p>' ;
+
+	// アプリケーション連携の解除
+	$html .= '<h2>アプリケーション連携の解除</h2>' ;
+	$html .= '<p>このアプリケーションとの連携は、下記設定ページで解除することができます。</p>' ;
+	$html .= '<p><a href="https://instagram.com/accounts/manage_access/" target="_blank">https://instagram.com/accounts/manage_access/</a></p>' ;
+
+?>
+
+<?php
+	// ブラウザに[$html]を出力 (HTMLのヘッダーとフッターを付けましょう)
+	echo $html ;
+?>
